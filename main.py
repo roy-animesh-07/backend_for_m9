@@ -23,34 +23,48 @@ app.add_middleware(
 class Patient(BaseModel):
     PatientID: Optional[str] = None
     Name: Optional[str] = Field(None, example="John Doe")
-    Age: Optional[int] = Field(None, ge=0, example=25)
+    DOB: Optional[str] = Field(None, example="2000-01-01")
     Gender: Optional[str] = Field(None, example="Male")
 
 
 class Encounter(BaseModel):
     EncounterID: Optional[str] = None
-    EncounterDate: Optional[str] = None
+    PatientID: Optional[str] = None
+    EncounterDate: Optional[str] = Field(None, example="2026-03-18")
+    EncounterType: Optional[str] = Field(None, example="Initial Visit")
 
 
 class Symptom(BaseModel):
+    EncounterID: Optional[str] = None
     SymptomType: Optional[str] = Field(None, example="cough")
-    Severity: Optional[str] = Field(None, example="high")
 
 
 class Cough(BaseModel):
+    EncounterID: Optional[str] = None
     CoughType: Optional[str] = Field(None, example="chronic")
 
 
 class Breath(BaseModel):
+    EncounterID: Optional[str] = None
+    Location: Optional[str] = Field(None, example="chest")
     SoundType: Optional[str] = Field(None, example="wheeze")
+    Intensity: Optional[str] = Field(None, example="Normal")
+    Pitch: Optional[str] = Field(None, example="Medium")
 
 
 class Smoking(BaseModel):
+    PatientID: Optional[str] = None
     SmokingStatus: Optional[str] = Field(None, example="current")
+    PacksPerDay: Optional[float] = Field(None, example=1.0)
+    YearsSmoked: Optional[float] = Field(None, example=5.0)
+    QuitDate: Optional[str] = Field(None, example="2020-01-01")
 
 
 class Exposure(BaseModel):
+    PatientID: Optional[str] = None
     ExposureType: Optional[str] = Field(None, example="pollution")
+    Duration: Optional[str] = Field(None, example="2 years")
+    Setting: Optional[str] = Field(None, example="urban")
 
 
 class FullRequest(BaseModel):
@@ -111,6 +125,29 @@ def get_reports():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@app.get("/tables")
+def get_all_tables():
+    from database import get_db
+    db = get_db()
+
+    collections = {
+        "Patients": "patients",
+        "Encounters": "clinical_encounters",
+        "Symptoms": "respiratory_symptoms",
+        "Cough Data": "cough_characteristics",
+        "Breath Sounds": "breath_sounds",
+        "Smoking History": "smoking_histories",
+        "Exposures": "environmental_exposures",
+        "Probability Scores": "disease_probability_scores"
+    }
+
+    result = {}
+
+    for title, name in collections.items():
+        result[title] = list(db[name].find({}, {"_id": 0}))
+
+    return {"success": True, "data": result}
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
